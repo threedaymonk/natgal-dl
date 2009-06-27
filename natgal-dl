@@ -85,9 +85,6 @@ private
     files
   end
 
-  def each_tile(message)
-  end
-
   def local_tile_path(x, y, suffix=nil)
     File.join(TEMP_DIR, "%04d-%02d-%02d%s.jpg" % [content_id, y, x, suffix ? "-" + suffix : ""])
   end
