@@ -1,0 +1,179 @@
+#!/usr/bin/env ruby
+require "open-uri"
+require "fileutils"
+require "progressbar"
+require "cgi"
+
+unless system("convert -h > /dev/null")
+  raise "ImageMagick is not installed or not in the path."
+end
+
+class NationalGallery
+  OBFUSCATOR = "vRfOdXapKz".scan(/./)
+  TILE_URI   = "http://www.nationalgallery.org.uk/tile.php?id=%s"
+  USER_AGENT = "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0)"
+  TILE_SIZE  = 256
+  TEMP_DIR   = "/tmp/natgal-tiles"
+
+  attr_reader :page_uri
+
+  def initialize(page_uri)
+    @page_uri = page_uri
+  end
+
+  def grab
+    fetch_tiles
+    tiles = prepared_tile_paths
+    tiled_image = "%04d.miff" % content_id # MIFF is native to ImageMagick
+    merge_tiles(tiles, tiled_image)
+    crop(tiled_image, filename)
+    FileUtils.rm(tiled_image)
+  end
+
+private
+  def filename
+    title.gsub(/[^a-z0-9]+/i, "-") + ".jpg"
+  end
+
+  def merge_tiles(files, destination)
+    tiling = "%dx%d" % [tiles_across, tiles_down]
+    tile_size = "%dx%d" % [TILE_SIZE, TILE_SIZE]
+    report "Merging" do
+      system(*(["montage", "-geometry", tile_size, "-tile", tiling] + files + [destination]))
+    end
+  end
+
+  def crop(source, destination)
+    final_size = "%dx%d+0+0" % [width.ceil, height.ceil]
+    report "Cropping" do
+      system("convert", "-crop", final_size, source, destination)
+    end
+  end
+
+  def fetch_tiles
+    progress = ProgressBar.new("Fetching", tiles_across * tiles_down)
+    (0 ... tiles_down).each do |y|
+      (0 ... tiles_across).each do |x|
+        fetch_tile(x, y)
+        progress.inc
+      end
+    end
+    progress.finish
+  end
+
+  def prepared_tile_paths
+    files = []
+    progress = ProgressBar.new("Preparing", tiles_across * tiles_down)
+    (0 ... tiles_down).each do |y|
+      (0 ... tiles_across).each do |x|
+        path = local_tile_path(x, y)
+        if x == (tiles_across - 1) || y == (tiles_down - 1)
+          modified_path = local_tile_path(x, y, "modified")
+          unless File.exist?(modified_path)
+            tile_size = "%dx%d" % [TILE_SIZE, TILE_SIZE]
+            system "convert", "-size", tile_size, "xc:white", modified_path
+            system "composite", "-geometry", "+0+0", path, modified_path, modified_path
+          end
+          files << modified_path
+        else
+          files << path
+        end
+        progress.inc
+      end
+    end
+    progress.finish
+    files
+  end
+
+  def each_tile(message)
+  end
+
+  def local_tile_path(x, y, suffix=nil)
+    File.join(TEMP_DIR, "%04d-%02d-%02d%s.jpg" % [content_id, y, x, suffix ? "-" + suffix : ""])
+  end
+
+  def fetch_tile(x, y)
+    path = local_tile_path(x, y)
+    return if File.exist?(path)
+    FileUtils.mkdir_p(File.dirname(path))
+    data = get(tile_uri(x, y))
+    File.open(path, "wb") do |f|
+      f << data
+    end
+  end
+
+  def tile_uri(x, y)
+    key = "%02d0%04d%02d0%d" % [y, content_id, x, zoom]
+    obfuscated = key.gsub(/\d/){ |m| OBFUSCATOR[m.to_i] }
+    TILE_URI % obfuscated
+  end
+
+  def data
+    return @data if @data
+    dl = page_source[%r{<dl class="data".*?</dl>}]
+    entries = []
+    dl.scan(%r{<d[td]>([^<]*)</d[td]>}) do |m|
+      value = m[0]
+      case value
+      when /^-?\d+$/
+        entries << value.to_i
+      when /^-?\d+\.\d+$/
+        entries << value.to_f
+      else
+        entries << value
+      end
+    end
+    @data = Hash[*entries]
+  end
+
+  def zoom
+    data["max"]
+  end
+
+  def content_id
+    data["contentId"]
+  end
+
+  def width
+    data["width"]
+  end
+
+  def height
+    data["height"]
+  end
+
+  def tiles_across
+    (width / TILE_SIZE).ceil
+  end
+
+  def tiles_down
+    (height / TILE_SIZE).ceil
+  end
+
+  def title
+    CGI.unescapeHTML(page_source[%r{<h1[^>]*>([^<]+)</h1>}, 1])
+  end
+
+  def page_source
+    @page_source ||= get(page_uri)
+  end
+
+  def get(uri)
+    open(uri, "User-Agent" => USER_AGENT, "Referer" => page_uri){ |f| f.read }
+  end
+
+  def report(message)
+    $stderr.print message, " ... "
+    $stderr.flush
+    yield
+    $stderr.puts "done"
+  end
+end
+
+if ARGV.empty?
+  puts "Usage: #{$0} gallery_uri [gallery_uri [...]]"
+end
+
+ARGV.each do |uri|
+  NationalGallery.new(uri).grab
+end
