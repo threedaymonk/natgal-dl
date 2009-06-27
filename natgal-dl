@@ -12,7 +12,6 @@ class NationalGallery
   OBFUSCATOR = "vRfOdXapKz".scan(/./)
   TILE_URI   = "http://www.nationalgallery.org.uk/tile.php?id=%s"
   USER_AGENT = "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0)"
-  TILE_SIZE  = 256
   TEMP_DIR   = "/tmp/natgal-tiles"
 
   attr_reader :page_uri
@@ -37,9 +36,9 @@ private
 
   def stitch_tiles(files, destination)
     tiling = "%dx%d" % [tiles_across, tiles_down]
-    tile_size = "%dx%d" % [TILE_SIZE, TILE_SIZE]
+    tile_size_param = "%dx%d" % [tile_size, tile_size]
     report "Stitching" do
-      system(*(["montage", "-geometry", tile_size, "-tile", tiling] + files + [destination]))
+      system(*(["montage", "-geometry", tile_size_param, "-tile", tiling] + files + [destination]))
     end
   end
 
@@ -70,8 +69,8 @@ private
         if x == (tiles_across - 1) || y == (tiles_down - 1)
           modified_path = local_tile_path(x, y, "modified")
           unless File.exist?(modified_path)
-            tile_size = "%dx%d" % [TILE_SIZE, TILE_SIZE]
-            system "convert", "-size", tile_size, "xc:white", modified_path
+            tile_size_param = "%dx%d" % [tile_size, tile_size]
+            system "convert", "-size", tile_size_param, "xc:white", modified_path
             system "composite", "-geometry", "+0+0", path, modified_path, modified_path
           end
           files << modified_path
@@ -139,12 +138,16 @@ private
     data["height"]
   end
 
+  def tile_size
+    data["tileSize"]
+  end
+
   def tiles_across
-    (width / TILE_SIZE).ceil
+    (width / tile_size).ceil
   end
 
   def tiles_down
-    (height / TILE_SIZE).ceil
+    (height / tile_size).ceil
   end
 
   def title
