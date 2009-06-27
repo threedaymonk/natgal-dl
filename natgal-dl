@@ -24,10 +24,10 @@ class NationalGallery
   def grab
     fetch_tiles
     tiles = prepared_tile_paths
-    tiled_image = "%04d.miff" % content_id # MIFF is native to ImageMagick
-    merge_tiles(tiles, tiled_image)
-    crop(tiled_image, filename)
-    FileUtils.rm(tiled_image)
+    stitched_image = "%04d.miff" % content_id # MIFF is native to ImageMagick
+    stitch_tiles(tiles, stitched_image)
+    crop(stitched_image, filename)
+    FileUtils.rm(stitched_image)
   end
 
 private
@@ -35,10 +35,10 @@ private
     title.gsub(/[^a-z0-9]+/i, "-") + ".jpg"
   end
 
-  def merge_tiles(files, destination)
+  def stitch_tiles(files, destination)
     tiling = "%dx%d" % [tiles_across, tiles_down]
     tile_size = "%dx%d" % [TILE_SIZE, TILE_SIZE]
-    report "Merging" do
+    report "Stitching" do
       system(*(["montage", "-geometry", tile_size, "-tile", tiling] + files + [destination]))
     end
   end
