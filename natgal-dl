@@ -21,6 +21,7 @@ class NationalGallery
   end
 
   def grab
+    $stderr.puts title
     fetch_tiles
     tiles = prepared_tile_paths
     stitched_image = "%04d.miff" % content_id # MIFF is native to ImageMagick
