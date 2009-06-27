@@ -1,7 +1,7 @@
 natgal-dl
 =========
 
-Download high-resolution images of paintings in the National Gallery collection.
+Download high-resolution images of paintings in the [National Gallery collection](http://www.nationalgallery.org.uk/artists/).
 
 Prerequisites
 -------------
