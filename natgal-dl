@@ -9,6 +9,8 @@ unless system("convert -h > /dev/null")
 end
 
 class NationalGallery
+  NoDataError = Class.new(RuntimeError)
+
   OBFUSCATOR = "vRfOdXapKz".scan(/./)
   TILE_URI   = "http://www.nationalgallery.org.uk/tile.php?id=%s"
   USER_AGENT = "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0)"
@@ -108,6 +110,7 @@ private
   def data
     return @data if @data
     dl = page_source[%r{<dl class="data".*?</dl>}]
+    raise NoDataError unless dl
     entries = []
     dl.scan(%r{<d[td]>([^<]*)</d[td]>}) do |m|
       value = m[0]
@@ -176,5 +179,9 @@ if ARGV.empty?
 end
 
 ARGV.each do |uri|
-  NationalGallery.new(uri).grab
+  begin
+    NationalGallery.new(uri).grab
+  rescue NationalGallery::NoDataError
+    $stderr.puts "This painting does not appear to be available at high resolution."
+  end
 end
