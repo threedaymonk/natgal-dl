@@ -4,7 +4,7 @@ require "fileutils"
 require "progressbar"
 require "cgi"
 
-unless system("convert -h > /dev/null")
+unless system("which convert > /dev/null")
   raise "ImageMagick is not installed or not in the path."
 end
 
