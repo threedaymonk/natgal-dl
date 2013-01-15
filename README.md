@@ -6,13 +6,17 @@ Download high-resolution images of paintings in the [National Gallery collection
 Prerequisites
 -------------
 
-* Ruby
-* The Ruby progressbar library
+* Ruby 1.8.7+
 * ImageMagick
 
 On Ubuntu:
 
-    sudo apt-get install ruby libprogressbar-ruby imagemagick
+    sudo apt-get install ruby imagemagick
+
+Installation
+------------
+
+    gem install natgal-dl
 
 Usage
 -----

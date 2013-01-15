@@ -1,2 +1,4 @@
 *.jpg
 *.miff
+Gemfile.lock
+*.gem
