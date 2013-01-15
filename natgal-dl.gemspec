@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = "natgal-dl"
-  s.version = "1.0.1"
+  s.version = "1.0.2"
   s.authors = ["Paul Battley"]
   s.email = ["pbattley@gmail.com"]
   s.homepage = "https://github.com/threedaymonk/natgal-dl"
