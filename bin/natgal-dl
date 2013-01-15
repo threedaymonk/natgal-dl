@@ -102,7 +102,7 @@ private
   end
 
   def tile_uri(x, y)
-    key = "%02d0%04d%02d0%d" % [y, content_id, x, zoom]
+    key = "%02d%05d%02d%02d" % [y, content_id, x, zoom]
     obfuscated = key.gsub(/\d/){ |m| OBFUSCATOR[m.to_i] }
     TILE_URI % obfuscated
   end
