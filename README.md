@@ -1,3 +1,16 @@
+ARCHIVED
+========
+
+This project is now archived. The National Gallery no longer uses
+a custom tile viewer, but has switched to DeepZoom. You can use one of these
+tools instead:
+
+- [dzi-dl](https://github.com/ryanfb/dzi-dl)
+- [dezoomify](https://github.com/lovasoa/dezoomify)
+- [dezoomify-rs](https://github.com/lovasoa/dezoomify-rs)
+
+----
+
 natgal-dl
 =========
 
